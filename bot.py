@@ -15,7 +15,7 @@ class Bot(commands.Bot):
 intents = Intents.default()
 intents.message_content = True
 
-bot = Bot(command_prefix='!', intents=intents)
+bot = Bot(intents=intents)
 # Remove default help command
 bot.remove_command('help') 
 # Set up logging
