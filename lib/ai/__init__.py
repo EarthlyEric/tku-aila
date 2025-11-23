@@ -2,7 +2,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
 from langchain.messages import HumanMessage
 
-class AI:
+class Agent:
     model = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0, max_output_tokens=1024, max_retries=2)
     base_system_prompt = """
     你是一個專業的 AI 智慧學習助理，致力於幫助學生達成學習目標。
@@ -15,14 +15,23 @@ class AI:
     4. 不要偏離當前的輔助模式，如使用者明確要求切換模式，請要求使用者關閉此交談。
     以下為當前輔助模式專有規則：
     """
+    def __init__(self, channel_id: int):
+        self.channel_id = channel_id
     
     def user_input(self, message_content: str) -> dict:
         return {
             "messages": [HumanMessage(content=message_content)]
         }
+        
+    def parse_response(self, response: dict) -> str:
+        messages = response.get('messages', [])
+        if messages:
+            return messages[-1].content
+        return "抱歉，我無法處理您的請求。請稍後再試。 :("
 
-class SchedulerAI(AI):
-    def __init__(self):
+class SchedulerAgent(Agent):
+    def __init__(self, channel_id: int):
+        super().__init__(channel_id=channel_id)
         # WIP: Add more detailed system prompt for scheduling mode
         self.system_prompt = self.base_system_prompt + """
         1. 現在是修課規劃模式。
@@ -35,16 +44,18 @@ class SchedulerAI(AI):
             system_prompt=self.system_prompt,
         )
     
-class SolverAI(AI):
-    def __init__(self):
+class SolverAgent(Agent):
+    def __init__(self, channel_id: int):
+        super().__init__(channel_id=channel_id)
         self.system_prompt = self.base_system_prompt + " You are a problem-solving assistant." # Placeholder prompt
         self.agent = create_agent(
             model=self.model,
             system_prompt=self.system_prompt,
         )
     
-class ExamPrepAI(AI):
-    def __init__(self):
+class ExamPrepAgent(Agent):
+    def __init__(self, channel_id: int):
+        super().__init__(channel_id=channel_id)
         self.system_prompt = self.base_system_prompt + " You are an exam preparation assistant." # Placeholder prompt
         self.agent = create_agent(
             model=self.model,
