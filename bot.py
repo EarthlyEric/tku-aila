@@ -5,6 +5,11 @@ from discord.ext import commands
 from discord import Intents
 from discord.utils import _ColourFormatter
 
+# Load environment variables from .env file if it exists
+if os.path.exists('.env'):
+    from dotenv import load_dotenv
+    load_dotenv()
+
 class Bot(commands.Bot):
     async def setup_hook(self):
         # Load Cogs
@@ -43,11 +48,7 @@ async def on_ready():
     logger.info(f'Logged in as {bot.user}')
     
 if __name__ == '__main__':
-    # Load environment variables from .env file if it exists and run the bot.
-    if os.path.exists('.env'):
-        from dotenv import load_dotenv
-        load_dotenv()
-        
+    # Check for required environment variables
     if os.getenv("IS_DEVELOPMENT", "False").lower() == "true":
         logger.setLevel(logging.DEBUG)
         logger.debug("Running in development mode: Debug logging enabled.")
