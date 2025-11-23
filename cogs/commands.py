@@ -1,3 +1,5 @@
+import time
+import asyncio
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -6,9 +8,8 @@ class CommandsCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         
-    @app_commands.command(name="hello", description="啟動 AI 智慧學習助理")
-    async def hello(self, interaction: discord.Interaction):
-        """啟動 AI 智慧學習助理，並提供個人化學習建議選項。"""
+    @app_commands.command(name="start", description="啟動 AI 智慧學習助理")
+    async def start(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
 
         class AssistantSelect(discord.ui.Select):
@@ -22,14 +23,23 @@ class CommandsCog(commands.Cog):
 
             async def callback(self, interaction: discord.Interaction):
                 mode = self.values[0]
+                await interaction.response.defer(ephemeral=True)
                 thread = await interaction.channel.create_thread(
-                    name=f"AI 智慧學習助理 - {mode}",
+                    name=f"AI 學習助理 - {mode} - {interaction.user.name} - {time.strftime('%Y%m%d-%H%M%S')}",
                     type=discord.ChannelType.private_thread,
-                    reason="User initiated AI learning assistant thread"
+                    reason="User initiated AI learning assistant thread",
+                    auto_archive_duration=60
                 )
                 await thread.add_user(interaction.user)
-                await thread.send(f"您好！這是您的智慧學習助理私人討論區，您選擇的協助類型是：**{mode}**。請在此提出您的問題或需求，我將竭誠為您服務！")
+                thread_welcome = (
+                        f"**💡 模式已啟動：【{mode}】**\n\n"
+                        f"你好，{interaction.user.mention}！歡迎來到您的專屬輔導空間。\n"
+                        f"這個討論串是私密的，只有您和我可以看到。\n\n"
+                        f"您可以隨時開始輸入您的問題或需求。"
+                    )
+                await thread.send(thread_welcome)
                 await interaction.followup.send(f"已為您建立專屬討論串：{thread.mention}，請點擊進入討論。", ephemeral=True)
+                
 
         class AssistantView(discord.ui.View):
             def __init__(self):
@@ -44,3 +54,17 @@ class CommandsCog(commands.Cog):
         """
 
         await interaction.followup.send(welcome_message, view=view, ephemeral=True)
+        
+        
+    @app_commands.command(name="close", description="關閉當前的 AI 智慧學習助理討論串")
+    async def close(self, interaction: discord.Interaction):
+        if interaction.channel.type in [discord.ChannelType.private_thread, discord.ChannelType.public_thread]:
+            await interaction.response.send_message("討論串即將被關閉。 倒數5秒...", ephemeral=True)
+            
+            await asyncio.sleep(5)
+            await interaction.channel.delete()
+        else:
+            await interaction.response.send_message("此指令只能在討論串中使用。", ephemeral=True)
+
+async def setup(bot: commands.Bot):
+    await bot.add_cog(CommandsCog(bot))
