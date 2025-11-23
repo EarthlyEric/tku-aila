@@ -13,3 +13,6 @@
    ```bash
    uv run bot.py
    ```
+
+### Discord bot permissions integer
+2252334537500736
