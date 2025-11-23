@@ -1,3 +1,4 @@
+import os
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
 from langchain.messages import HumanMessage
@@ -22,7 +23,7 @@ class Agent:
         return {
             "messages": [HumanMessage(content=message_content)]
         }
-        
+            
     def parse_response(self, response: dict) -> str:
         messages = response.get('messages', [])
         if messages:
