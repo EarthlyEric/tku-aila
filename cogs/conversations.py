@@ -43,7 +43,7 @@ class ConversationsCog(commands.Cog):
                 if ai is None:
                     logger.debug('Get mode failed for thread: %s', thread_name)
                     return
-                response = ai.agent.invoke(input=ai.user_input(user_message))
+                response = ai.agent.invoke(input=ai.user_input(user_message), config={"configurable": {"thread_id": str(message.channel.id)}})
             except Exception as e:
                 logger.exception('AI invocation failed')
                 await message.channel.send("抱歉，內部服務發生錯誤，請稍後再試。")
