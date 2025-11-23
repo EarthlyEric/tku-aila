@@ -16,16 +16,21 @@ class CommandsCog(commands.Cog):
             def __init__(self):
                 options = [
                     discord.SelectOption(label="修課規劃", description="根據您的學習地圖提供選課與學習策略建議", value="schedule"),
-                    discord.SelectOption(label="問題解決", description="協助您解決學習中的具體問題與疑惑", value="solve"),
+                    discord.SelectOption(label="難題解決", description="協助您解決學習中的具體問題與疑惑", value="solve"),
                     discord.SelectOption(label="考試準備", description="提供考前複習計劃與重點整理建議", value="exam"),
                 ]
                 super().__init__(placeholder="請選擇您需要的協助類型", min_values=1, max_values=1, options=options)
 
             async def callback(self, interaction: discord.Interaction):
                 mode = self.values[0]
+                mode_map = {
+                    "schedule": "修課規劃",
+                    "solve": "難題解決",
+                    "exam": "考試準備"
+                }
                 await interaction.response.defer(ephemeral=True)
                 thread = await interaction.channel.create_thread(
-                    name=f"AI 學習助理 - {mode} - {interaction.user.name} - {time.strftime('%Y%m%d-%H%M%S')}",
+                    name=f"AI 學習助理 - {mode_map[mode]} - {interaction.user.name} - {time.strftime('%Y%m%d-%H%M%S')}",
                     type=discord.ChannelType.private_thread,
                     reason="User initiated AI learning assistant thread",
                     auto_archive_duration=60
