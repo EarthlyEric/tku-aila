@@ -1,13 +1,22 @@
 import discord
 import logging
 from discord.ext import commands
-from lib.ai import SchedulerAI
+from lib.ai import SchedulerAgent, SolverAgent, ExamPrepAgent
 
 logger = logging.getLogger('tku-aila')
 
 class ConversationsCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        
+    def get_model_from_thread_name(self, thread_name: str ,channel_id: int) -> SchedulerAgent | SolverAgent | ExamPrepAgent | None:
+        if "修課規劃" in thread_name:
+            return SchedulerAgent(channel_id=channel_id)
+        elif "問題解決" in thread_name:
+            return SolverAgent(channel_id=channel_id)
+        elif "考試準備" in thread_name:
+            return ExamPrepAgent(channel_id=channel_id)
+        return None
         
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -30,20 +39,17 @@ class ConversationsCog(commands.Cog):
         
         async with message.channel.typing():
             try:
-                ai = SchedulerAI() # Currently only SchedulerAI is implemented
-                response_structure = ai.agent.invoke(input=ai.user_input(user_message))
+                ai = self.get_model_from_thread_name(thread_name, channel_id=message.channel.id)
+                if ai is None:
+                    logger.debug('Get mode failed for thread: %s', thread_name)
+                    return
+                response = ai.agent.invoke(input=ai.user_input(user_message))
             except Exception as e:
                 logger.exception('AI invocation failed')
                 await message.channel.send("抱歉，內部服務發生錯誤，請稍後再試。")
                 return
 
-            messages = response_structure.get('messages', []) if isinstance(response_structure, dict) else []
-            if messages:
-                parsed_response = messages[-1].content
-                await message.channel.send(parsed_response)
-            else:
-                # Classic fallback response :)
-                await message.channel.send("抱歉，我無法處理您的請求。請稍後再試。 :(")
+            await message.channel.send(ai.parse_response(response))
         
 async def setup(bot: commands.Bot):
     await bot.add_cog(ConversationsCog(bot))
