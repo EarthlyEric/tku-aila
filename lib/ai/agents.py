@@ -11,13 +11,14 @@ CF_ACCOUNT_ID = os.getenv("CF_ACCOUNT_ID")
 CF_GATEWAY_ID = os.getenv("CF_GATEWAY_ID")
 BASE_URL = f"{CF_AI_GATEWAY_ENDPOINT}/{CF_ACCOUNT_ID}/{CF_GATEWAY_ID}/compat"
 
+
 class Agent:
     model = init_chat_model(
         model="google-ai-studio/gemini-2.5-flash",
         model_provider="openai",
         temperature=0,
         max_tokens=2048,
-        max_retrie=2,
+        max_retries=2,
         api_key=CF_AI_GATEWAY_TOKEN,
         base_url=BASE_URL
     )
