@@ -33,7 +33,7 @@ class CommandsCog(commands.Cog):
                     name=f"AI 學習助理 - {mode_map[mode]} - {interaction.user.name} - {time.strftime('%Y%m%d-%H%M%S')}",
                     type=discord.ChannelType.private_thread,
                     reason="User initiated AI learning assistant thread",
-                    auto_archive_duration=60
+                    auto_archive_duration=1440
                 )
                 await thread.add_user(interaction.user)
                 thread_welcome = (
