@@ -1,13 +1,26 @@
 import os
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.chat_models import init_chat_model
 from langchain.agents import create_agent
 from langchain.messages import HumanMessage
 from langgraph.checkpoint.redis import RedisSaver
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/")
+CF_AI_GATEWAY_ENDPOINT = "https://gateway.ai.cloudflare.com/v1"
+CF_AI_GATEWAY_TOKEN = os.getenv("CF_AI_GATEWAY_TOKEN")
+CF_ACCOUNT_ID = os.getenv("CF_ACCOUNT_ID")
+CF_GATEWAY_ID = os.getenv("CF_GATEWAY_ID")
+BASE_URL = f"{CF_AI_GATEWAY_ENDPOINT}/{CF_ACCOUNT_ID}/{CF_GATEWAY_ID}/compat"
 
 class Agent:
-    model = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0, max_output_tokens=1024, max_retries=2)
+    model = init_chat_model(
+        model="google-ai-studio/gemini-2.5-flash",
+        model_provider="openai",
+        temperature=0,
+        max_tokens=2048,
+        max_retrie=2,
+        api_key=CF_AI_GATEWAY_TOKEN,
+        base_url=BASE_URL
+    )
     base_system_prompt = """
     你是一個專業的 AI 智慧學習助理，致力於幫助學生達成學習目標。
     淡江大學的學生會向你尋求各種學習相關的建議與支援。
@@ -21,7 +34,11 @@ class Agent:
     """
     def __init__(self, channel_id: int):
         self.channel_id = channel_id
-        self.checkpoint = RedisSaver(redis_url=REDIS_URL)
+        ttl_policy = {
+            "default_ttl": 86400,
+            "refresh_on_read" : False
+        }
+        self.checkpoint = RedisSaver(redis_url=REDIS_URL, ttl=ttl_policy)
         self.checkpoint.setup()
     
     def user_input(self, message_content: str) -> dict:
@@ -54,7 +71,10 @@ class SchedulerAgent(Agent):
 class SolverAgent(Agent):
     def __init__(self, channel_id: int):
         super().__init__(channel_id=channel_id)
-        self.system_prompt = self.base_system_prompt + " You are a problem-solving assistant." # Placeholder prompt
+        self.system_prompt = self.base_system_prompt + """
+        1. 現在是問題解決模式，協助學生解決學習中遇到的各種問題。
+        2. 提供詳細的解題步驟與相關概念說明。
+        """ # Placeholder prompt
         self.agent = create_agent(
             model=self.model,
             system_prompt=self.system_prompt,
