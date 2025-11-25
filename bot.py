@@ -53,24 +53,26 @@ if __name__ == '__main__':
         logger.setLevel(logging.DEBUG)
         logger.debug("Running in development mode: Debug logging enabled.")
         
-    if os.getenv("DISCORD_TOKEN") is None:
-        logger.error("DISCORD_TOKEN not found in environment variables.")
-        sys.exit(1)
-    
-    if os.getenv("GOOGLE_API_KEY") is None:
-        logger.error("GOOGLE_API_KEY not found in environment variables.")
-        sys.exit(1)
-    
-    if os.getenv("REDIS_URL") is None:
-        logger.error("REDIS_URL not found in environment variables.")
-        sys.exit(1)
-    else:
-        from lib.checker import Checker
-        checker = Checker(redis_url=os.getenv("REDIS_URL"))
-        if not checker.redis_is_available():
-            logger.error("Redis is not available. Exiting.")
+    envs = [
+        "DISCORD_TOKEN",
+        "CF_AI_GATEWAY_TOKEN",
+        "CF_ACCOUNT_ID",
+        "CF_GATEWAY_ID",
+        "REDIS_URL"
+    ]
+        
+    for env in envs:
+        if os.getenv(env) is None:
+            logger.error(f"{env} not found in environment variables.")
             sys.exit(1)
             
+        if env == "REDIS_URL":
+            from lib.checker import Checker
+            checker = Checker(redis_url=os.getenv("REDIS_URL"))
+            if not checker.redis_is_available():
+                logger.error("Redis service is not available. Exiting.")
+                sys.exit(1)
+
     token = os.getenv('DISCORD_TOKEN') 
     bot.run(token, log_handler=None, root_logger=True)  
     
