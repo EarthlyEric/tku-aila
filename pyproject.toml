@@ -8,6 +8,6 @@ dependencies = [
     "discord>=2.3.2",
     "dotenv>=0.9.9",
     "langchain>=1.0.8",
-    "langchain-google-genai>=3.1.0",
+    "langchain-openai>=1.1.0",
     "langgraph-checkpoint-redis>=0.2.1",
 ]
