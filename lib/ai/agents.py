@@ -2,7 +2,8 @@ import os
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_agent
 from langchain.messages import HumanMessage
-from langgraph.checkpoint.redis import RedisSaver
+from langgraph.checkpoint.redis import AsyncRedisSaver
+from lib.ai.tools import *
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/")
 CF_AI_GATEWAY_ENDPOINT = "https://gateway.ai.cloudflare.com/v1"
@@ -10,11 +11,12 @@ CF_AI_GATEWAY_TOKEN = os.getenv("CF_AI_GATEWAY_TOKEN")
 CF_ACCOUNT_ID = os.getenv("CF_ACCOUNT_ID")
 CF_GATEWAY_ID = os.getenv("CF_GATEWAY_ID")
 BASE_URL = f"{CF_AI_GATEWAY_ENDPOINT}/{CF_ACCOUNT_ID}/{CF_GATEWAY_ID}/compat"
+MODEL_NAME = os.getenv("MODEL_NAME")
 
 
 class Agent:
     model = init_chat_model(
-        model="google-ai-studio/gemini-2.5-flash",
+        model=MODEL_NAME,
         model_provider="openai",
         temperature=0,
         max_tokens=2048,
@@ -39,7 +41,7 @@ class Agent:
             "default_ttl": 86400,
             "refresh_on_read" : False
         }
-        self.checkpoint = RedisSaver(redis_url=REDIS_URL, ttl=ttl_policy)
+        self.checkpoint = AsyncRedisSaver(redis_url=REDIS_URL, ttl=ttl_policy)
         self.checkpoint.setup()
     
     def user_input(self, message_content: str) -> dict:
@@ -66,6 +68,7 @@ class SchedulerAgent(Agent):
         self.agent = create_agent(
             model=self.model,
             system_prompt=self.system_prompt,
+            
             checkpointer=self.checkpoint
         )
     
@@ -75,10 +78,13 @@ class SolverAgent(Agent):
         self.system_prompt = self.base_system_prompt + """
         1. 現在是問題解決模式，協助學生解決學習中遇到的各種問題。
         2. 提供詳細的解題步驟與相關概念說明。
+        
         """ # Placeholder prompt
         self.agent = create_agent(
             model=self.model,
             system_prompt=self.system_prompt,
+            tools=[python_sandbox_interpreter],
+            checkpointer=self.checkpoint,
         )
     
 class ExamPrepAgent(Agent):
@@ -88,4 +94,5 @@ class ExamPrepAgent(Agent):
         self.agent = create_agent(
             model=self.model,
             system_prompt=self.system_prompt,
+            checkpointer=self.checkpoint
         )
