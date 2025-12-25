@@ -1,9 +1,13 @@
 services:
   bot:
-    build: .
-    container_name: tku-aila
-    env_file:
-      - ./.env
+    image: ghcr.io/earthlyeric/tku-aila:latest
+    environment:
+      - DISCORD_TOKEN=
+      - CF_AI_GATEWAY_TOKEN=
+      - CF_ACCOUNT_ID=
+      - CF_GATEWAY_ID=
+      - MODEL_NAME=groq/openai/gpt-oss-120b
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - redis
   redis:
