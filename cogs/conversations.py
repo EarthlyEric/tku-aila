@@ -1,7 +1,7 @@
 import discord
 import logging
 from discord.ext import commands
-from lib.ai import SchedulerAgent, SolverAgent, ExamPrepAgent
+from ai.agents import SchedulerAgent, SolverAgent, ExamPrepAgent
 
 logger = logging.getLogger('tku-aila')
 
