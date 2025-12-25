@@ -12,7 +12,7 @@ class ConversationsCog(commands.Cog):
     def get_model_from_thread_name(self, thread_name: str ,channel_id: int) -> SchedulerAgent | SolverAgent | ExamPrepAgent | None:
         if "修課規劃" in thread_name:
             return SchedulerAgent(channel_id=channel_id)
-        elif "問題解決" in thread_name:
+        elif "難題解決" in thread_name:
             return SolverAgent(channel_id=channel_id)
         elif "考試準備" in thread_name:
             return ExamPrepAgent(channel_id=channel_id)
@@ -43,7 +43,7 @@ class ConversationsCog(commands.Cog):
                 if ai is None:
                     logger.debug('Get mode failed for thread: %s', thread_name)
                     return
-                response = ai.agent.invoke(input=ai.user_input(user_message), config={"configurable": {"thread_id": str(message.channel.id)}})
+                response = await ai.agent.ainvoke(input=ai.user_input(user_message), config={"configurable": {"thread_id": str(message.channel.id)}})
             except Exception as e:
                 logger.exception('AI invocation failed')
                 await message.channel.send("抱歉，內部服務發生錯誤，請稍後再試。")
