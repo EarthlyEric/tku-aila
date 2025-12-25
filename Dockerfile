@@ -1,6 +1,6 @@
 FROM alpine:3.23
 
-RUN apk add uv python3 deno
+RUN apk add uv python3 deno build-base
 
 COPY . /app
 WORKDIR /app
