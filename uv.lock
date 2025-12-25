@@ -1270,7 +1270,7 @@ wheels = [
 ]
 
 [[package]]
-name = "tku-ai-learning-assistant"
+name = "tku-aila"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
