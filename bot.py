@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import logging
 from discord.ext import commands
 from discord import Intents
@@ -35,7 +36,7 @@ stream_formatter = _ColourFormatter()
 
 if not os.path.exists('logs'):
     os.makedirs('logs')
-logfile_handler = logging.FileHandler(filename='logs/bot.log', encoding='utf-8', mode='w')
+logfile_handler = logging.FileHandler(filename=f'logs/bot-{time.strftime("%Y%m%d-%H%M%S")}.log', encoding='utf-8', mode='w')
 logfile_handler.setFormatter(formatter)
 logger.addHandler(logfile_handler)
 
@@ -58,6 +59,7 @@ if __name__ == '__main__':
         "CF_AI_GATEWAY_TOKEN",
         "CF_ACCOUNT_ID",
         "CF_GATEWAY_ID",
+        "MODEL_NAME"
         "REDIS_URL"
     ]
         
@@ -74,5 +76,5 @@ if __name__ == '__main__':
                 sys.exit(1)
 
     token = os.getenv('DISCORD_TOKEN') 
-    bot.run(token, log_handler=None, root_logger=True)  
+    bot.run(token, log_handler=None)  
     
