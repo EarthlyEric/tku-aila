@@ -59,7 +59,8 @@ if __name__ == '__main__':
         "CF_AI_GATEWAY_TOKEN",
         "CF_ACCOUNT_ID",
         "CF_GATEWAY_ID",
-        "MODEL_NAME"
+        "MODEL_NAME",
+        "SMALL_MODEL_NAME",
         "REDIS_URL"
     ]
         
