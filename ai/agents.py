@@ -2,8 +2,9 @@ import os
 from langchain.chat_models import init_chat_model
 from langchain.agents import create_agent
 from langchain.messages import HumanMessage
+from langchain.agents.middleware import SummarizationMiddleware, ContextEditingMiddleware , ClearToolUsesEdit
+from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.checkpoint.redis import AsyncRedisSaver
-from lib.ai.tools import *
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/")
 CF_AI_GATEWAY_ENDPOINT = "https://gateway.ai.cloudflare.com/v1"
@@ -12,18 +13,65 @@ CF_ACCOUNT_ID = os.getenv("CF_ACCOUNT_ID")
 CF_GATEWAY_ID = os.getenv("CF_GATEWAY_ID")
 BASE_URL = f"{CF_AI_GATEWAY_ENDPOINT}/{CF_ACCOUNT_ID}/{CF_GATEWAY_ID}/compat"
 MODEL_NAME = os.getenv("MODEL_NAME")
-
+SMALL_MODEL_NAME = os.getenv("SMALL_MODEL_NAME")
 
 class Agent:
     model = init_chat_model(
         model=MODEL_NAME,
         model_provider="openai",
         temperature=0,
-        max_tokens=2048,
+        max_tokens=3072,
         max_retries=2,
         api_key=CF_AI_GATEWAY_TOKEN,
         base_url=BASE_URL
     )
+    small_model = init_chat_model(
+        model=SMALL_MODEL_NAME,
+        model_provider="openai",
+        temperature=0,
+        max_tokens=3072,
+        max_retries=2,
+        api_key=CF_AI_GATEWAY_TOKEN,
+        base_url=BASE_URL
+    )
+    
+class WorkerAgent(Agent):
+    def __init__(self, system_prompt: str, tools: list = []):
+        self.checkpoint = InMemorySaver()
+        self.system_prompt = system_prompt
+        self.agent = create_agent(
+            model=self.model,
+            system_prompt=self.system_prompt,
+            tools=tools,
+            middleware=[
+                SummarizationMiddleware(
+                    model=self.small_model,
+                    max_tokens_before_summary= 4000,
+                ),
+                ContextEditingMiddleware(
+                edits=[
+                    ClearToolUsesEdit(
+                    trigger=5000,
+                    keep=3,
+                    ),
+                ],
+                ),
+            ],
+            checkpointer=self.checkpoint
+        )
+    
+    def user_input(self, message_content: str) -> dict:
+        return {
+            "messages": [HumanMessage(content=message_content)]
+        }
+    
+    def parse_response(self, response: dict) -> str:
+        messages = response.get('messages', [])
+        if messages:
+            return messages[-1].content
+        return "抱歉，我無法處理您的請求。請稍後再試。 :("
+      
+class ChatAgent(Agent):
     base_system_prompt = """
     你是一個專業的 AI 智慧學習助理，致力於幫助學生達成學習目標。
     淡江大學的學生會向你尋求各種學習相關的建議與支援。
@@ -55,31 +103,33 @@ class Agent:
             return messages[-1].content
         return "抱歉，我無法處理您的請求。請稍後再試。 :("
 
-class SchedulerAgent(Agent):
+class SchedulerAgent(ChatAgent):
     def __init__(self, channel_id: int):
+        from .tools import tku_acad_system_agent
         super().__init__(channel_id=channel_id)
-        # WIP: Add more detailed system prompt for scheduling mode
         self.system_prompt = self.base_system_prompt + """
         1. 現在是修課規劃模式。
         2. 根據學生的學習地圖，提供選課建議與學習策略。
         3. 協助學生制定學期修課計劃，考慮課程難度與先修需求。
         4. 詢問學生科系與年級，以提供更精準的建議與訪問外部資源。
+        5. 使用 tku_acad_system_agent 工具來存取淡江大學學術系統中的課程與時間表資訊。
         """
         self.agent = create_agent(
             model=self.model,
             system_prompt=self.system_prompt,
-            
+            tools=[tku_acad_system_agent],
             checkpointer=self.checkpoint
         )
     
-class SolverAgent(Agent):
+class SolverAgent(ChatAgent):
     def __init__(self, channel_id: int):
+        from .tools import python_sandbox_interpreter
         super().__init__(channel_id=channel_id)
         self.system_prompt = self.base_system_prompt + """
         1. 現在是問題解決模式，協助學生解決學習中遇到的各種問題。
         2. 提供詳細的解題步驟與相關概念說明。
-        
-        """ # Placeholder prompt
+        3. 請務必使用 python 程式碼來驗算解題結果，並使用 python_interpreter 來執行程式碼。
+        """
         self.agent = create_agent(
             model=self.model,
             system_prompt=self.system_prompt,
@@ -87,10 +137,12 @@ class SolverAgent(Agent):
             checkpointer=self.checkpoint,
         )
     
-class ExamPrepAgent(Agent):
+class ExamPrepAgent(ChatAgent):
     def __init__(self, channel_id: int):
         super().__init__(channel_id=channel_id)
-        self.system_prompt = self.base_system_prompt + " You are an exam preparation assistant." # Placeholder prompt
+        self.system_prompt = self.base_system_prompt + """
+        1. 現在是考試準備模式，協助學生準備即將到來的考試。
+        """
         self.agent = create_agent(
             model=self.model,
             system_prompt=self.system_prompt,

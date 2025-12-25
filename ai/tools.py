@@ -2,7 +2,7 @@ import logging
 from langchain.tools import tool
 from langchain_sandbox import PyodideSandbox
 
-logger = logging.getLogger('tku-aila')
+logger = logging.getLogger("tku-aila")
 
 @tool("python_sandbox",description="A Pyodide sandbox tool for executing Python code.")
 async def python_sandbox_interpreter(code: str) -> str:
@@ -23,4 +23,6 @@ async def python_sandbox_interpreter(code: str) -> str:
     elif result.status == "error":
         logger.error(f"python_sandbox Error:\n{result.stderr}")
         return result.stderr
+    
+
     
