@@ -5,6 +5,9 @@ import logging
 from discord.ext import commands
 from discord import Intents
 from discord.utils import _ColourFormatter
+from tools.db import DBInitializer, DBSessionManager
+from tools.db.models import Metadata
+from tools.acad import ACADDownloader, ACADProcessor
 
 # Load environment variables from .env file if it exists
 if os.path.exists('.env'):
@@ -80,8 +83,40 @@ if __name__ == '__main__':
                 logger.error(f"Redis ping failed: {e}")
                 logger.error("Exiting due to Redis connection failure.")
                 sys.exit(1)
+                
+    logger.info("Initializing database...")
+    db_init = DBInitializer()
+    db_init.init_db()
+    
+    sync_manager = DBSessionManager()
+    current_year = None
+    current_semester = None
+    
+    with sync_manager.get_session() as session:
+        meta = session.get(Metadata, 1)
+        if meta:
+            current_year = meta.year
+            current_semester = meta.semester
+            logger.info("Local database version: %s-%s", current_year, current_semester)
+        else:
+            logger.info("Local database is empty.")
 
+    downloader = ACADDownloader()
+    
+    check_year = str(current_year) if current_year is not None else "-1"
+    check_semester = str(current_semester) if current_semester is not None else "-1"
 
+    if downloader.has_update(check_year, check_semester):
+        logger.info("New version found or database empty. Downloading...")
+        
+        file_data = downloader.download_file()
+        
+        processor = ACADProcessor()
+        contents = processor.unpack_file(file_data['file_bytes']) 
+        processor.generate_database(contents, file_data['metadata'])
+    else:
+        logger.info("Database is up to date. No action taken.")
+    
     token = os.getenv('DISCORD_TOKEN') 
     bot.run(token, log_handler=None)  
     
