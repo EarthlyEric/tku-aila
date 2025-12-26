@@ -105,19 +105,33 @@ class ChatAgent(Agent):
 
 class SchedulerAgent(ChatAgent):
     def __init__(self, channel_id: int):
-        from .tools import tku_acad_system_agent
+        from .tools import tku_course_database_query
         super().__init__(channel_id=channel_id)
         self.system_prompt = self.base_system_prompt + """
         1. 現在是修課規劃模式。
         2. 根據學生的學習地圖，提供選課建議與學習策略。
         3. 協助學生制定學期修課計劃，考慮課程難度與先修需求。
         4. 詢問學生科系與年級，以提供更精準的建議與訪問外部資源。
-        5. 使用 tku_acad_system_agent 工具來存取淡江大學學術系統中的課程與時間表資訊。
+        5. 使用 
         """
         self.agent = create_agent(
             model=self.model,
             system_prompt=self.system_prompt,
-            tools=[tku_acad_system_agent],
+            middleware=[
+                SummarizationMiddleware(
+                    model=self.small_model,
+                    max_tokens_before_summary= 4000,
+                ),
+                ContextEditingMiddleware(
+                edits=[
+                    ClearToolUsesEdit(
+                    trigger=5000,
+                    keep=3,
+                    ),
+                ],
+                ),
+            ],
+            tools=[tku_course_database_query],
             checkpointer=self.checkpoint
         )
     
@@ -133,6 +147,20 @@ class SolverAgent(ChatAgent):
         self.agent = create_agent(
             model=self.model,
             system_prompt=self.system_prompt,
+            middleware=[
+                SummarizationMiddleware(
+                    model=self.small_model,
+                    max_tokens_before_summary= 4000,
+                ),
+                ContextEditingMiddleware(
+                edits=[
+                    ClearToolUsesEdit(
+                    trigger=5000,
+                    keep=3,
+                    ),
+                ],
+                ),
+            ],
             tools=[python_sandbox_interpreter],
             checkpointer=self.checkpoint,
         )
@@ -146,5 +174,19 @@ class ExamPrepAgent(ChatAgent):
         self.agent = create_agent(
             model=self.model,
             system_prompt=self.system_prompt,
+            middleware=[
+                SummarizationMiddleware(
+                    model=self.small_model,
+                    max_tokens_before_summary= 4000,
+                ),
+                ContextEditingMiddleware(
+                edits=[
+                    ClearToolUsesEdit(
+                    trigger=5000,
+                    keep=3,
+                    ),
+                ],
+                ),
+            ],
             checkpointer=self.checkpoint
         )
