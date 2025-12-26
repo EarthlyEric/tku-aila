@@ -1,10 +1,11 @@
 [project]
 name = "tku-aila"
 version = "0.1.0"
-description = "Add your description here"
+description = "A conversational AI assistant designed to help Tamkang University students.
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "aiosqlite>=0.22.1",
     "beautifulsoup4>=4.14.3",
     "discord>=2.3.2",
     "dotenv>=0.9.9",
