@@ -61,6 +61,7 @@ if __name__ == '__main__':
         "CF_GATEWAY_ID",
         "MODEL_NAME",
         "SMALL_MODEL_NAME",
+        "COURSES_DATABASE_PATH",
         "REDIS_URL"
     ]
         
