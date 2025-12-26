@@ -1,5 +1,7 @@
 # TKU AI Learning Assistant
-A conversational AI assistant designed to help Tamkang University students.
+A conversational AI Agent assistant designed to help Tamkang University students.
+
+## Features
 
 ## Setup development environment 
 1. Install uv as package manager if you don't have it:

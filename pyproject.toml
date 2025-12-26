@@ -1,7 +1,7 @@
 [project]
 name = "tku-aila"
 version = "0.1.0"
-description = "A conversational AI assistant designed to help Tamkang University students."
+description = "A conversational AI Agent assistant designed to help Tamkang University students."
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
