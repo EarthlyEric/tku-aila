@@ -65,7 +65,11 @@ class ACADProcessor:
 
                 course_name_cell = cells[10]
                 course_name_full = course_name_cell.get_text(" ", strip=True)
-            
+                
+                # Who choose to  full-width font here, you are evil. very evil.
+                if current_dept_info =="TKFXB.ＡＩ系（日）DEPARTMENT OF ARTIFICIAL INTELLIGENCE":
+                    current_dept_info = "TKFXB.人工智慧學系（日）DEPARTMENT OF ARTIFICIAL INTELLIGENCE"
+                    
                 course_data = {
                     "department": current_dept_info, # 系別
                     "grade": get_cell_text(0),     # 年級
@@ -81,7 +85,7 @@ class ACADProcessor:
                     "course_name": course_name_full, # 科目名稱
                     "people_limit": get_cell_text(11),    # 人數設限
                     "instructor": get_cell_text(12), # 授課教師
-                    "time_place": get_cell_text(13) if len(cells) > 14 else ","+ get_cell_text(14), # 星期/節次/教室 1
+                    "time_place": get_cell_text(13) if len(cells) > 14 else ","+ get_cell_text(14), # 星期/節次/教室
                 }
                 course_data['serial_no'] = course_data['serial_no'].replace("　", "")
                 courses.append(course_data)
@@ -108,7 +112,7 @@ class ACADProcessor:
                         class_type=course['class_type'],
                         group_type=course['group_type'],
                         required_elective_type=course['required_elective_type'],
-                        credits=float(course['credits']) if hasattr(course, 'credits') else None, # 簡化檢查
+                        credits=float(course['credits']) if hasattr(course, 'credits') else None,
                         course_name=course['course_name'],
                         people_limit=int(course['people_limit']) if course['people_limit'].isdigit() else None,
                         instructor=course['instructor'],
