@@ -66,7 +66,7 @@ class ACADDownloader:
             r.raise_for_status()
             if r.content:
                 return {
-                    "file": r.content,
+                    "file_bytes": r.content,
                     "metadata": self.__get_metadata_from_url(downloader_url)
                 }
     
