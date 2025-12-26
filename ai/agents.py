@@ -46,13 +46,13 @@ class WorkerAgent(Agent):
             middleware=[
                 SummarizationMiddleware(
                     model=self.small_model,
-                    max_tokens_before_summary= 4000,
+                    max_tokens_before_summary= 2000,
                 ),
                 ContextEditingMiddleware(
                 edits=[
                     ClearToolUsesEdit(
-                    trigger=5000,
-                    keep=3,
+                        trigger=2500,
+                        keep=3,
                     ),
                 ],
                 ),
@@ -90,7 +90,6 @@ class ChatAgent(Agent):
             "refresh_on_read" : False
         }
         self.checkpoint = AsyncRedisSaver(redis_url=REDIS_URL, ttl=ttl_policy)
-        self.checkpoint.setup()
     
     def user_input(self, message_content: str) -> dict:
         return {
@@ -109,10 +108,40 @@ class SchedulerAgent(ChatAgent):
         super().__init__(channel_id=channel_id)
         self.system_prompt = self.base_system_prompt + """
         1. 現在是修課規劃模式。
-        2. 根據學生的學習地圖，提供選課建議與學習策略。
-        3. 協助學生制定學期修課計劃，考慮課程難度與先修需求。
-        4. 詢問學生科系與年級，以提供更精準的建議與訪問外部資源。
-        5. 使用 
+        2. 協助學生制定學期修課計劃，考慮課程難度與先修需求。
+        3. 詢問學生科系與年級，以提供更精準的建議與訪問外部資源。
+        4. 使用 tku_course_database_query 的 SQL 工具來查詢淡江大學的課程資訊，先查詢 metadata 表以獲取最新的學年與學期資訊。。
+        以下為資料庫查詢工具的使用說明：
+            - 工具名稱：tku_course_database_query
+            - 禁止SQL語句列表: ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE"]
+            - 僅允許使用 SELECT 語句來查詢課程資料。
+            - 【重要】所有 SELECT 查詢必須加上 "LIMIT 10" 以避免回傳過多資料導致錯誤。
+            - 若資料不足，再進行第二次更精確的查詢。
+            - 注意系別、年級等條件需與學生需求相符，特別注意人工智慧學系與AI系要以 人工智慧學系 查詢。
+            - 回傳結果時，請整理成易讀的格式，並提供必要的解釋與建議。
+            - Database schema 包含以下主要欄位：
+                table name:courses
+                    "id": 唯一識別碼(無需使用)
+                    "department": 系別
+                    "grade": 年級
+                    "serial_no": 開課序號
+                    "course_id": 科目編號
+                    "specialty": 專業別
+                    "semester": 學期序
+                    "class_type": 班別
+                    "group_type": 分組別
+                    "required_elective_type": 必選修 (Required/Elective)
+                    "credits": 學分數
+                    "group_type": 群別
+                    "course_name": 科目名稱
+                    "people_limit": 人數設限
+                    "instructor": 授課教師
+                    "time_place": 星期/節次/教室
+                table name:metadata
+                    "id": 唯一識別碼，固定為1
+                    "year": 學年
+                    "semester": 學期
+        5. 在回應中引用查詢結果，並根據學生需求提供具體的選課建議。
         """
         self.agent = create_agent(
             model=self.model,
@@ -120,13 +149,13 @@ class SchedulerAgent(ChatAgent):
             middleware=[
                 SummarizationMiddleware(
                     model=self.small_model,
-                    max_tokens_before_summary= 4000,
+                    max_tokens_before_summary= 2000,
                 ),
                 ContextEditingMiddleware(
                 edits=[
                     ClearToolUsesEdit(
-                    trigger=5000,
-                    keep=3,
+                        trigger=2500,
+                        keep=1,
                     ),
                 ],
                 ),
@@ -137,12 +166,17 @@ class SchedulerAgent(ChatAgent):
     
 class SolverAgent(ChatAgent):
     def __init__(self, channel_id: int):
-        from .tools import python_sandbox_interpreter
+        from .tools import python_interpreter
         super().__init__(channel_id=channel_id)
         self.system_prompt = self.base_system_prompt + """
         1. 現在是問題解決模式，協助學生解決學習中遇到的各種問題。
         2. 提供詳細的解題步驟與相關概念說明。
-        3. 請務必使用 python 程式碼來驗算解題結果，並使用 python_interpreter 來執行程式碼。
+        3. 請務必使用 python_interpreter 程式碼來驗算解題結果，並使用 python_interpreter 來執行程式碼。
+        以下為 python_interpreter 程式碼執行工具的使用說明：
+            - 工具名稱：python_interpreter
+            - 僅允許使用 python 程式碼來進行計算與驗算。
+            - 回傳結果時，請整理成易讀的格式，並提供必要的解釋與建議。
+        4. 在回應中引用程式碼執行結果，並根據學生需求提供具體的解題建議。
         """
         self.agent = create_agent(
             model=self.model,
@@ -150,18 +184,18 @@ class SolverAgent(ChatAgent):
             middleware=[
                 SummarizationMiddleware(
                     model=self.small_model,
-                    max_tokens_before_summary= 4000,
+                    max_tokens_before_summary= 2000,
                 ),
                 ContextEditingMiddleware(
                 edits=[
                     ClearToolUsesEdit(
-                    trigger=5000,
-                    keep=3,
+                        trigger=2500,
+                        keep=3,
                     ),
                 ],
                 ),
             ],
-            tools=[python_sandbox_interpreter],
+            tools=[python_interpreter],
             checkpointer=self.checkpoint,
         )
     
@@ -177,13 +211,13 @@ class ExamPrepAgent(ChatAgent):
             middleware=[
                 SummarizationMiddleware(
                     model=self.small_model,
-                    max_tokens_before_summary= 4000,
+                    max_tokens_before_summary= 2000,
                 ),
                 ContextEditingMiddleware(
                 edits=[
                     ClearToolUsesEdit(
-                    trigger=5000,
-                    keep=3,
+                        trigger=2500,
+                        keep=3,
                     ),
                 ],
                 ),
