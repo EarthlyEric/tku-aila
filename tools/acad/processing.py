@@ -1,7 +1,14 @@
 import io
 import re
+import time
 import rarfile
+import asyncio
+import logging
 from bs4 import BeautifulSoup
+from tools.db import DBInitializer, DBSessionManager
+from tools.db.models import Courses, Metadata
+
+logger = logging.getLogger("tku-aila.acad.processing")
 
 class ACADProcessor:
     def unpack_file(self, file_bytes: bytes) -> list[bytes]:
@@ -80,6 +87,43 @@ class ACADProcessor:
                 courses.append(course_data)
         return courses
     
-    def generate_database(self, html_bytes_list: list[bytes]):
-        pass
-    
+    def generate_database(self, html_bytes_list: list[bytes], metadata: dict):
+        logger.info("Starting database generation...")
+        start_time = time.time()
+        DBInitializer().init_db()
+        session_manager = DBSessionManager()
+        
+        with session_manager.get_session() as session:
+            for html_bytes in html_bytes_list:
+                courses = self.html_parser(html_bytes)
+                
+                for course in courses:
+                    new_course = Courses(
+                        department=course['department'],
+                        grade=int(course['grade']) if course['grade'].isdigit() else None,
+                        serial_no=course['serial_no'],
+                        course_id=course['course_id'],
+                        specialty=course['specialty'],
+                        semester=int(course['semester']) if course['semester'].isdigit() else None,
+                        class_type=course['class_type'],
+                        group_type=course['group_type'],
+                        required_elective_type=course['required_elective_type'],
+                        credits=float(course['credits']) if hasattr(course, 'credits') else None, # 簡化檢查
+                        course_name=course['course_name'],
+                        people_limit=int(course['people_limit']) if course['people_limit'].isdigit() else None,
+                        instructor=course['instructor'],
+                        time_place=course['time_place']
+                    )
+                    session.add(new_course)
+                
+                session.commit()
+            
+            existing_metadata = session.get(Metadata, 1)
+            if not existing_metadata:
+                new_metadata = Metadata(id=1, year=metadata['year'], semester=metadata['semester'])
+                session.add(new_metadata)
+            else:
+                existing_metadata.last_updated = int(time.time())
+            session.commit()
+
+        logger.info("Database generation completed. Time: %.2f seconds", time.time() - start_time)
