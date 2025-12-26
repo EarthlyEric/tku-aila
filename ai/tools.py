@@ -1,12 +1,13 @@
 import logging
 from langchain.tools import tool
 from langchain_sandbox import PyodideSandbox
+from sqlalchemy import text
 from tools.db import DBSessionManager
 
 logger = logging.getLogger("tku-aila")
 
-@tool("python_sandbox",description="A Pyodide sandbox tool for executing Python code.")
-async def python_sandbox_interpreter(code: str) -> str:
+@tool("python_interpreter",description="A Pyodide sandbox tool for executing Python code.")
+async def python_interpreter(code: str) -> str:
     """
     A Pyodide sandbox interpreter tool for executing Python code.
     Args:
@@ -37,13 +38,16 @@ async def tku_course_database_query(query: str) -> str:
     """
     logger.info(f"course_database_query Query:\n{query}")
     session_manager = DBSessionManager()
+    
     banned_statements = ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE"]
     if any(banned in query.upper() for banned in banned_statements):
         logger.error("course_database_query Error:\nAttempted to execute a banned SQL statement.")
         return "Error: Attempted to execute a banned SQL statement. Only SELECT queries are allowed."
+    
     try:
         with session_manager.get_session() as session:
-            result = session.execute(query)
+            result = session.execute(text(query)) 
+            
             rows = result.fetchall()
             output = "\n".join([str(row) for row in rows])
             logger.info(f"course_database_query Result:\n{output}")
