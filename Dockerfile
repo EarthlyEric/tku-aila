@@ -25,8 +25,5 @@ RUN apt-get update && apt-get install -y build-essential \
     && rm -rf /var/lib/apt/lists/* \
     && uv cache clean
 
-RUN uv run playwright install chromium --with-deps \
-    && rm -rf /var/lib/apt/lists/*
-    
 ENV IS_DEVELOPMENT=false
 CMD ["uv", "run", "bot.py"]

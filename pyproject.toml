@@ -13,10 +13,8 @@ dependencies = [
     "langchain-openai>=1.1.0",
     "langchain-sandbox>=0.0.3",
     "langgraph-checkpoint-redis>=0.2.1",
-    "playwright>=1.57.0",
+    "rarfile>=4.2",
 ]
 
 [dependency-groups]
-dev = [
-    "nest-asyncio>=1.6.0",
-]
+dev = []

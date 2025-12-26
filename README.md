@@ -6,7 +6,6 @@ A conversational AI assistant designed to help Tamkang University students.
 2. Install dependencies:
    ```bash
     uv sync
-    uv run playwright install chromium
     ```
 
 3. Create a `.env` file from `example.env` in the root directory and edit it with your configuration.
