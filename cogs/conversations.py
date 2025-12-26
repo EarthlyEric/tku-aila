@@ -47,16 +47,21 @@ class ConversationsCog(commands.Cog):
                     logger.debug('Get mode failed for thread: %s', thread_name)
                     return
                 response = await ai.agent.ainvoke(input=ai.user_input(user_message), config={"configurable": {"thread_id": str(message.channel.id)}})
-                if len(response) > 2000:
-                    chunks = [response[i:i+2000] for i in range(0, len(response), 2000)]
-                    for chunk in chunks:
-                        await message.channel.send(chunk)
             except Exception as e:
                 logger.exception('AI invocation failed')
                 await message.channel.send("抱歉，內部服務發生錯誤，請稍後再試。")
                 return
 
-            await message.channel.send(ai.parse_response(response))
+            message_content = ai.parse_response(response)
+            
+            if len(message_content) > 2000:
+                chunks = [message_content[i:i+2000] for i in range(0, len(message_content), 2000)]
+                for chunk in chunks:
+                    await message.channel.send(chunk)
+                    return
+            else:
+                await message.channel.send(message_content)
+                return
         
 async def setup(bot: commands.Bot):
     await bot.add_cog(ConversationsCog(bot))
