@@ -1,2 +1,5 @@
 .env
 __pycache__/
+logs/
+node_modules/
+data/*
