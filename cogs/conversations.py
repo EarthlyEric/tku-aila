@@ -40,10 +40,17 @@ class ConversationsCog(commands.Cog):
         async with message.channel.typing():
             try:
                 ai = self.get_model_from_thread_name(thread_name, channel_id=message.channel.id)
+                if hasattr(ai, 'checkpoint') and hasattr(ai.checkpoint, 'setup'):
+                    await ai.checkpoint.setup()
+                    
                 if ai is None:
                     logger.debug('Get mode failed for thread: %s', thread_name)
                     return
                 response = await ai.agent.ainvoke(input=ai.user_input(user_message), config={"configurable": {"thread_id": str(message.channel.id)}})
+                if len(response) > 2000:
+                    chunks = [response[i:i+2000] for i in range(0, len(response), 2000)]
+                    for chunk in chunks:
+                        await message.channel.send(chunk)
             except Exception as e:
                 logger.exception('AI invocation failed')
                 await message.channel.send("抱歉，內部服務發生錯誤，請稍後再試。")
