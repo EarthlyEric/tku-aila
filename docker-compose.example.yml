@@ -8,6 +8,10 @@ services:
       - CF_GATEWAY_ID=
       - MODEL_NAME=groq/openai/gpt-oss-120b
       - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    container_name: tku-aila-bot
     depends_on:
       - redis
   redis:
