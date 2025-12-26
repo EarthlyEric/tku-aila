@@ -6,15 +6,28 @@ from urllib.parse import urljoin
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-class AcadDownloader:
+class ACADDownloader:
     ACAD_URL = "https://esquery.tku.edu.tw/acad/"
-    
     def __init__(self,):
         self.__session = requests.Session()
         self.__session.headers.update({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         })
-
+        
+    def __get_metadata_from_url(self, url: str) -> dict:
+        pattern = r"upload/(\d{3})(\d{1})CLASS\.RAR"
+        match = re.search(pattern, url)
+        
+        if match:
+            year = match.group(1)
+            semester = match.group(2)
+            return {
+                "year": year,
+                "semester": semester
+            }
+        else:
+            raise ValueError("URL does not match expected pattern for metadata extraction.")
+        
     def __get_download_url(self):
         response = self.__session.get(self.ACAD_URL, verify=False)
         response.raise_for_status()
@@ -43,7 +56,7 @@ class AcadDownloader:
             final_download_link = urljoin(popup_url, download_href)
             return final_download_link
             
-    def download_file(self, save_name: str):
+    def download_file(self) -> dict:
         downloader_url = self.__get_download_url()
         
         if not downloader_url:
@@ -51,12 +64,13 @@ class AcadDownloader:
             
         with self.__session.get(downloader_url, stream=True, verify=False) as r:
             r.raise_for_status()
-            with open(save_name + ".rar", 'wb') as f:
-                for chunk in r.iter_content(chunk_size=8192):
-                    f.write(chunk)
-                    
-if __name__ == "__main__":
-    downloader = AcadDownloader()
-    downloader.download_file("acad_offline")
-    print("Download completed.")
+            if r.content:
+                return {
+                    "file": r.content,
+                    "metadata": self.__get_metadata_from_url(downloader_url)
+                }
     
+    def has_update(self, year: int, semester: int) -> bool:
+        downloader_url = self.__get_download_url()
+        metadata = self.__get_metadata_from_url(downloader_url)
+        return (metadata['year'] != year) or (metadata['semester'] != semester)
