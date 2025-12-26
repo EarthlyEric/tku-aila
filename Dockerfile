@@ -5,6 +5,7 @@ ENV PATH="/root/.local/bin:/root/.deno/bin:$PATH"
 
 RUN apt-get update && apt-get install -y \
     unzip \
+    unrar \
     curl \
     python3 \
     python3-pip \
