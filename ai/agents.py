@@ -49,12 +49,12 @@ class WorkerAgent(Agent):
                     max_tokens_before_summary= 2000,
                 ),
                 ContextEditingMiddleware(
-                edits=[
-                    ClearToolUsesEdit(
-                        trigger=2500,
-                        keep=3,
-                    ),
-                ],
+                    edits=[
+                        ClearToolUsesEdit(
+                            trigger=2500,
+                            keep=3,
+                        ),
+                    ],
                 ),
             ],
             checkpointer=self.checkpoint
@@ -152,12 +152,12 @@ class SchedulerAgent(ChatAgent):
                     max_tokens_before_summary= 2000,
                 ),
                 ContextEditingMiddleware(
-                edits=[
-                    ClearToolUsesEdit(
-                        trigger=2500,
-                        keep=1,
-                    ),
-                ],
+                    edits=[
+                        ClearToolUsesEdit(
+                            trigger=2500,
+                            keep=1,
+                        ),
+                    ],
                 ),
             ],
             tools=[tku_course_database_query],
@@ -171,12 +171,13 @@ class SolverAgent(ChatAgent):
         self.system_prompt = self.base_system_prompt + """
         1. 現在是問題解決模式，協助學生解決學習中遇到的各種問題。
         2. 提供詳細的解題步驟與相關概念說明。
-        3. 請務必使用 python_interpreter 程式碼來驗算解題結果，並使用 python_interpreter 來執行程式碼。
-        以下為 python_interpreter 程式碼執行工具的使用說明：
-            - 工具名稱：python_interpreter
+        3. 請務必使用 python 程式碼來驗算解題結果，並使用 python 來執行程式碼。
+        以下為 python 程式碼執行工具的使用說明：
+            - 工具名稱：python
             - 僅允許使用 python 程式碼來進行計算與驗算。
             - 回傳結果時，請整理成易讀的格式，並提供必要的解釋與建議。
         4. 在回應中引用程式碼執行結果，並根據學生需求提供具體的解題建議。
+        5. 請不要使用 Latex，系統無法正確顯示。
         """
         self.agent = create_agent(
             model=self.model,
@@ -187,12 +188,12 @@ class SolverAgent(ChatAgent):
                     max_tokens_before_summary= 2000,
                 ),
                 ContextEditingMiddleware(
-                edits=[
-                    ClearToolUsesEdit(
-                        trigger=2500,
-                        keep=3,
-                    ),
-                ],
+                    edits=[
+                        ClearToolUsesEdit(
+                            trigger=2500,
+                            keep=2,
+                        ),
+                    ],
                 ),
             ],
             tools=[python_interpreter],
@@ -204,6 +205,7 @@ class ExamPrepAgent(ChatAgent):
         super().__init__(channel_id=channel_id)
         self.system_prompt = self.base_system_prompt + """
         1. 現在是考試準備模式，協助學生準備即將到來的考試。
+        2. 從學生提供的資訊中，提供有效的複習策略與重點整理。
         """
         self.agent = create_agent(
             model=self.model,
@@ -214,12 +216,12 @@ class ExamPrepAgent(ChatAgent):
                     max_tokens_before_summary= 2000,
                 ),
                 ContextEditingMiddleware(
-                edits=[
-                    ClearToolUsesEdit(
-                        trigger=2500,
-                        keep=3,
-                    ),
-                ],
+                    edits=[
+                        ClearToolUsesEdit(
+                            trigger=2500,
+                            keep=2,
+                        ),
+                    ],
                 ),
             ],
             checkpointer=self.checkpoint
