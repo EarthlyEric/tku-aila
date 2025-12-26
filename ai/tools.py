@@ -6,7 +6,7 @@ from tools.db import DBSessionManager
 
 logger = logging.getLogger("tku-aila")
 
-@tool("python_interpreter",description="A Pyodide sandbox tool for executing Python code.")
+@tool("python",description="A Pyodide sandbox tool for executing Python code.")
 async def python_interpreter(code: str) -> str:
     """
     A Pyodide sandbox interpreter tool for executing Python code.
