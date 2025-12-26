@@ -71,11 +71,16 @@ if __name__ == '__main__':
             sys.exit(1)
             
         if env == "REDIS_URL":
-            from lib.checker import Checker
-            checker = Checker(redis_url=os.getenv("REDIS_URL"))
-            if not checker.redis_is_available():
-                logger.error("Redis service is not available. Exiting.")
+            import redis
+            redis_client = redis.Redis.from_url(os.getenv("REDIS_URL"))
+            try:
+                redis_client.ping()
+                logger.info("Redis ping successful.")
+            except Exception as e:
+                logger.error(f"Redis ping failed: {e}")
+                logger.error("Exiting due to Redis connection failure.")
                 sys.exit(1)
+
 
     token = os.getenv('DISCORD_TOKEN') 
     bot.run(token, log_handler=None)  
