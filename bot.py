@@ -18,8 +18,7 @@ class Bot(commands.Bot):
     async def setup_hook(self):
         # Load Cogs
         if os.getenv("IS_DEVELOPMENT", "False").lower() == "true":
-            await self.load_extension('cogs.dev_debug')
-        await self.load_extension('cogs.debug')
+            await self.load_extension('cogs.debug')
         await self.load_extension('cogs.commands')
         await self.load_extension('cogs.conversations')
         # Sync Slash Commands to Discord
