@@ -39,10 +39,11 @@ class DBAsyncSessionManager:
 class DBSessionManager:
     def __init__(self):
         self.engine = create_engine(SYNC_DATABASE_URL)
-        self.session = sessionmaker(bind=self.engine, expire_on_commit=False)
+        self.SessionLocal = sessionmaker(bind=self.engine, expire_on_commit=False)
 
     def get_session(self):
-        return self.session()
+        """Returns a context manager for database sessions."""
+        return self.SessionLocal()
 
 # 更新 __all__ 讓外部可以 import 新的 class
 __all__ = ["Base", "DBInitializer", "DBAsyncSessionManager", "DBSessionManager"]

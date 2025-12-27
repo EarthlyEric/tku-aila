@@ -1,3 +1,4 @@
+import re
 import logging
 from langchain.tools import tool
 from pydantic import BaseModel, Field
@@ -47,7 +48,12 @@ async def tku_course_database_query(query: str) -> str:
     session_manager = DBSessionManager()
     
     banned_statements = ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE"]
-    if any(banned in query.upper() for banned in banned_statements):
+    # Remove all whitespace and comments to prevent bypass attempts
+    query_normalized = re.sub(r'/\*.*?\*/', '', query, flags=re.DOTALL)  # Remove /* */ comments
+    query_normalized = re.sub(r'--.*$', '', query_normalized, flags=re.MULTILINE)  # Remove -- comments
+    query_normalized = re.sub(r'\s+', '', query_normalized)  # Remove all whitespace
+    
+    if any(banned in query_normalized.upper() for banned in banned_statements):
         logger.error("course_database_query Error:\nAttempted to execute a banned SQL statement.")
         return "Error: Attempted to execute a banned SQL statement. Only SELECT queries are allowed."
     

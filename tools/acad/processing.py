@@ -112,7 +112,7 @@ class ACADProcessor:
                         class_type=course['class_type'],
                         group_type=course['group_type'],
                         required_elective_type=course['required_elective_type'],
-                        credits=float(course['credits']) if hasattr(course, 'credits') else None,
+                        credits=float(course['credits']) if course.get('credits') and course['credits'].replace('.', '', 1).isdigit() else None,
                         course_name=course['course_name'],
                         people_limit=int(course['people_limit']) if course['people_limit'].isdigit() else None,
                         instructor=course['instructor'],
