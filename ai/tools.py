@@ -1,12 +1,19 @@
 import logging
 from langchain.tools import tool
+from pydantic import BaseModel, Field
 from langchain_sandbox import PyodideSandbox
 from sqlalchemy import text
 from tools.db import DBSessionManager
 
 logger = logging.getLogger("tku-aila")
 
-@tool("python",description="A Pyodide sandbox tool for executing Python code.")
+class PythonInterpreterArgs(BaseModel):
+    code: str = Field(description="The Python code to execute.")
+
+class TKUCourseDatabaseQueryArgs(BaseModel):
+    query: str = Field(description="The SQL query to execute on the Tamkang University course database. banned_statements = [\"INSERT\", \"UPDATE\", \"DELETE\", \"DROP\", \"ALTER\", \"CREATE\"]")
+
+@tool("python",description="A Pyodide sandbox tool for executing Python code.", args_schema=PythonInterpreterArgs)
 async def python_interpreter(code: str) -> str:
     """
     A Pyodide sandbox interpreter tool for executing Python code.
@@ -26,7 +33,7 @@ async def python_interpreter(code: str) -> str:
         logger.error(f"python_sandbox Error:\n{result.stderr}")
         return result.stderr
 
-@tool("tku_course_database_query", description="A tool for querying the Tamkang University course database.")
+@tool("tku_course_database_query", description="A tool for querying the Tamkang University course database.", args_schema=TKUCourseDatabaseQueryArgs)
 async def tku_course_database_query(query: str) -> str:
     """
     A tool for querying the Tamkang University course database.
