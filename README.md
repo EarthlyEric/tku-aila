@@ -22,13 +22,12 @@ There are 3 types of agents available:
 ## Deployment
 Recommended to use Docker for deployment. Pull the latest image from Github Packages and run it with your environment variables.
 ```bash
-docker pull ghcr.io/earthlyeric6/tku-aila:latest
+docker pull ghcr.io/earthlyeric/tku-aila:latest
 ```
 cofigure `docker-compose.example.yml` as needed and rename it to `docker-compose.yml`, then run:
 ```bash
 docker-compose up -d
 ```
 Oh, everything should be up and running!
-
 ### discord bot permissions integer
 2252334537500736
