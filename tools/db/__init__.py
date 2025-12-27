@@ -44,5 +44,4 @@ class DBSessionManager:
     def get_session(self):
         return self.session()
 
-# 更新 __all__ 讓外部可以 import 新的 class
 __all__ = ["Base", "DBInitializer", "DBAsyncSessionManager", "DBSessionManager"]
