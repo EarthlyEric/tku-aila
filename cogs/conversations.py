@@ -58,10 +58,8 @@ class ConversationsCog(commands.Cog):
                 chunks = [message_content[i:i+2000] for i in range(0, len(message_content), 2000)]
                 for chunk in chunks:
                     await message.channel.send(chunk)
-                    return
             else:
                 await message.channel.send(message_content)
-                return
         
 async def setup(bot: commands.Bot):
     await bot.add_cog(ConversationsCog(bot))
