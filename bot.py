@@ -86,37 +86,53 @@ if __name__ == '__main__':
                 sys.exit(1)
                 
     logger.info("Initializing database...")
-    db_init = DBInitializer()
-    db_init.init_db()
-    
+    try:
+        db_init = DBInitializer()
+        db_init.init_db()
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+        sys.exit(1)
+
     sync_manager = DBSessionManager()
     current_year = None
     current_semester = None
-    
-    with sync_manager.get_session() as session:
-        meta = session.get(Metadata, 1)
-        if meta:
-            current_year = meta.year
-            current_semester = meta.semester
-            logger.info("Local database version: %s-%s", current_year, current_semester)
-        else:
-            logger.info("Local database is empty.")
+
+    try:
+        with sync_manager.get_session() as session:
+            meta = session.get(Metadata, 1)
+            if meta:
+                current_year = meta.year
+                current_semester = meta.semester
+                logger.info("Local database version: %s-%s", current_year, current_semester)
+            else:
+                logger.info("Local database is empty.")
+    except Exception as e:
+        logger.error(f"Failed to query database metadata: {e}")
+        logger.info("Proceeding with fresh database download...")
 
     downloader = ACADDownloader()
-    
+
     check_year = str(current_year) if current_year is not None else "-1"
     check_semester = str(current_semester) if current_semester is not None else "-1"
 
-    if downloader.has_update(check_year, check_semester):
-        logger.info("New version found or database empty. Downloading...")
-        
-        file_data = downloader.download_file()
-        
-        processor = ACADProcessor()
-        contents = processor.unpack_file(file_data['file_bytes']) 
-        processor.generate_database(contents, file_data['metadata'])
-    else:
-        logger.info("Database is up to date. No action taken.")
+    try:
+        if downloader.has_update(check_year, check_semester):
+            logger.info("New version found or database empty. Downloading...")
+
+            file_data = downloader.download_file()
+
+            processor = ACADProcessor()
+            contents = processor.unpack_file(file_data['file_bytes']) 
+            processor.generate_database(contents, file_data['metadata'])
+        else:
+            logger.info("Database is up to date. No action taken.")
+    except Exception as e:
+        logger.error(f"Failed to download or process course data: {e}")
+        if current_year is None:
+            logger.error("No local database available and download failed. Exiting.")
+            sys.exit(1)
+        else:
+            logger.warning("Using existing local database.")
     
     token = os.getenv('DISCORD_TOKEN') 
     bot.run(token, log_handler=None)  
